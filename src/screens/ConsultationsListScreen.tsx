@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Consultation {
   id: number;
@@ -15,14 +16,27 @@ const ConsultationsListScreen = () => {
   const [consultations, setConsultations] = useState<Consultation[]>([]);
 
   useEffect(() => {
-    // Fetch consultations from the backend
-    axios.get('http://localhost:3000/api/consultations')
-      .then((response) => {
-        setConsultations(response.data);
-      })
-      .catch((error) => {
+    const fetchConsultations = async () => {
+      try {
+        // Obter o token do armazenamento local (ou qualquer mecanismo de armazenamento)
+        const token = await AsyncStorage.getItem('token'); 
+        
+        if (token) {
+          const response = await axios.get('http://localhost:3000/api/consultations', {
+            headers: {
+              Authorization: `Bearer ${token}` // Enviar o token no cabeçalho
+            }
+          });
+          setConsultations(response.data.consultations);
+        } else {
+          console.error('Token não encontrado');
+        }
+      } catch (error) {
         console.error('Erro ao buscar consultas:', error);
-      });
+      }
+    };
+
+    fetchConsultations();
   }, []);
 
   const renderItem = ({ item }: { item: Consultation }) => (
